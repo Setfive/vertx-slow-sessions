@@ -39,10 +39,7 @@ public class RequestVerticle extends AbstractVerticle {
                     });
 
             httpClientRequest.exceptionHandler(hcrEh -> {
-                //logger.info("Hit Request exception");
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                hcrEh.printStackTrace(pw);
+                hcrEh.printStackTrace();
                 message.reply("ERROR");
             });
 
