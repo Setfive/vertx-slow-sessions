@@ -1,6 +1,7 @@
 package main.java.io.vertx.example.web.sessions;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpClient;
@@ -40,6 +41,9 @@ public class Server extends AbstractVerticle {
 
     Router router = Router.router(vertx);
 
+    vertx.deployVerticle(RequestVerticle.class.getName(), new DeploymentOptions(), r -> { });
+    vertx.deployVerticle(RequestVerticle.class.getName(), new DeploymentOptions(), r -> { });
+
     router.route().handler(CookieHandler.create());
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
     router.route().handler(routingContext -> {
@@ -51,12 +55,23 @@ public class Server extends AbstractVerticle {
 
       session.put("hitcount", cnt);
 
-      HttpClientOptions httpClientOptions = new HttpClientOptions();
-      httpClientOptions.setMaxPoolSize(100);
-      HttpClient httpClient = vertx.createHttpClient(httpClientOptions);
+      routingContext
+              .response()
+              .putHeader("content-type", "text/html")
+              .end("<html><body><h1>Hitcount: " + cnt + "</h1></body></html>");
 
-      routingContext.response().putHeader("content-type", "text/html")
-                               .end("<html><body><h1>Hitcount: " + cnt + "</h1></body></html>");
+        for(int i = 0; i < 10; i++) {
+
+            String url = "http://app.s5srv.com/slow.php?q=notslow&i=" + i;
+            if (i == 1 || i == 3 || i == 8) {
+                url = "http://app.s5srv.com/slow.php?i=" + i;
+            }
+
+            vertx.eventBus().send("requestservice.postservice", url, postReply -> {
+                System.out.println(postReply.result().body());
+            });
+        }
+
     });
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);
