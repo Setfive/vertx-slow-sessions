@@ -42,24 +42,23 @@ public class Server extends AbstractVerticle {
     Router router = Router.router(vertx);
 
     vertx.deployVerticle(RequestVerticle.class.getName(), new DeploymentOptions(), r -> { });
-    vertx.deployVerticle(RequestVerticle.class.getName(), new DeploymentOptions(), r -> { });
 
     router.route().handler(CookieHandler.create());
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
-    router.route().handler(routingContext -> {
 
-      Session session = routingContext.session();
+    router.get("/test-fast").handler(routingContext -> {
 
-      Integer cnt = session.get("hitcount");
-      cnt = (cnt == null ? 0 : cnt) + 1;
+        vertx.eventBus().send("requestservice.postservice", "http://app.s5srv.com/slow.php?q=notslow&i=REQUESTED", postReply -> {
+            System.out.println("On fast got: " + postReply.result().body());
+            routingContext
+                    .response()
+                    .putHeader("content-type", "text/html")
+                    .end("<html><body><h1>" + postReply.result().body() + "</h1></body></html>");
+        });
 
-      session.put("hitcount", cnt);
+    });
 
-      routingContext
-              .response()
-              .putHeader("content-type", "text/html")
-              .end("<html><body><h1>Hitcount: " + cnt + "</h1></body></html>");
-
+    router.get("/test-slow").handler(routingContext -> {
         for(int i = 0; i < 10; i++) {
 
             String url = "http://app.s5srv.com/slow.php?q=notslow&i=" + i;
@@ -72,6 +71,10 @@ public class Server extends AbstractVerticle {
             });
         }
 
+        routingContext
+                .response()
+                .putHeader("content-type", "text/html")
+                .end("<html><body><h1>Queued requests</h1></body></html>");
     });
 
     vertx.createHttpServer().requestHandler(router::accept).listen(8080);

@@ -15,10 +15,9 @@ public class RequestVerticle extends AbstractVerticle {
     @Override
     public void start() {
 
+        Integer httpClientTimeout = 1000;
+
         HttpClientOptions httpClientOptions = new HttpClientOptions();
-        httpClientOptions.setMaxPoolSize(5);
-        httpClientOptions.setIdleTimeout(500);
-        httpClientOptions.setConnectTimeout(500);
 
         EventBus eb = vertx.eventBus();
         eb.consumer("requestservice.postservice", message -> {
@@ -47,8 +46,9 @@ public class RequestVerticle extends AbstractVerticle {
                 message.reply("ERROR");
             });
 
+            httpClientRequest.setTimeout(httpClientTimeout);
             httpClientRequest.end();
-
+            httpClient.close();
         });
 
     }
