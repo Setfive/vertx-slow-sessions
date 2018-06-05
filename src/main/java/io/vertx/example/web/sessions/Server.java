@@ -62,7 +62,7 @@ public class Server extends AbstractVerticle {
         for(int i = 0; i < 10; i++) {
 
             String url = "http://app.s5srv.com/slow.php?q=notslow&i=" + i;
-            if (i == 1 || i == 3 || i == 8) {
+            if (true || i == 1 || i == 3 || i == 8) {
                 url = "http://app.s5srv.com/slow.php?i=" + i;
             }
 
